@@ -1,0 +1,10 @@
+<?php 
+
+$command = escapeshellcmd('sudo python3 a.py');
+$output = shell_exec($command);
+echo $output;
+echo "Hello World"
+?>
+
+Raspberry
+/var/www/html
