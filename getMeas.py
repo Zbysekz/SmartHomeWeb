@@ -267,7 +267,7 @@ def Log(s):
     #print("LOGGED:"+str(s)) do not print, this script is callled by webpage
 
     dateStr=getTime().strftime('%Y-%m-%d %H:%M:%S')
-    with open("getMeas_log.txt","a") as file:
+    with open("getMeas.log","a") as file:
         file.write(dateStr+" >> "+str(s)+"\n")
 
 #==============================================================================
