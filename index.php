@@ -47,6 +47,9 @@ td, th {
 <div style="float:right; width:10%;">
 		<a href="serviceGraphs.php" style="color: #F6F6E8">Servisní grafy</a> 
 </div>
+<div style="float:right; width:10%;">
+		<a href="/grafana" style="color: #F6F6E8">Grafana</a> 
+</div>
       <font color="#F6F6E8" size = "8">Aktuální stav:</font></br>
 <blockquote>
 	<font color="#F6F6E8" size = "8">Doma:</font></br>
