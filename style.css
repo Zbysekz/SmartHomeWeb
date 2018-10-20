@@ -1,12 +1,21 @@
 canvas {
 	position:absolute;
 	top:0;
-    	left:0;
+    left:0;
 }
+body {color: white;}
+
 /*Strong signal*/
 .iconic-signal.iconic-signal-strong .iconic-signal-base {
     fill:#569e26;
 }
 .iconic-signal.iconic-signal-strong .iconic-signal-wave * {
     stroke:#569e26;
+}
+
+.svg-background {
+ position: absolute; 
+ width: 100%; 
+ left: 0; 
+ top: 0;
 }
