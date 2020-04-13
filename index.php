@@ -24,34 +24,52 @@
 	$pressure=0.0;
 	$voltageMet=0.0;
 	$pyPrice;
+	$deviceTable = array();
 
 	function readFromDatabase() {
-		global $locked,$alarm,$phoneCommState,$phoneSignalInfo,$temp1,$temp2,$humidity,$pressure,$voltageMet;
+		global $locked,$alarm,$phoneCommState,$phoneSignalInfo,$temp1,$temp2,$humidity,$pressure,$voltageMet,$deviceTable;
 	
 		
 		$db = new SQLite3('/home/pi/main.db');
 		$db->busyTimeout(5000);
 		
+		// ----- read state table
 		$results = $db->query('SELECT * FROM state');
-		$row = $results->fetchArray();
+		$states = $results->fetchArray();
+		
+		// ----- read online device table
+		$results = $db->query('SELECT ip FROM onlineDevices LIMIT 10');
+		
+		while ($onlineDevice = $results->fetchArray()) {
+    		array_push($deviceTable, $onlineDevice);
+		}
 		
 		$db->close();
 		
-		$locked=$row['locked']=='1'?1:0;
-		$alarm=$row['alarm']=='1'?1:0;
+		$locked=$states['locked']=='1'?1:0;
+		$alarm=$states['alarm'];
 		
-		$phoneCommState=$row['phoneCommState']=='1'?1:0;
-		$phoneSignalInfo=$row['phoneSignalInfo'];
+		$phoneCommState=$states['phoneCommState']=='1'?1:0;
+		$phoneSignalInfo=$states['phoneSignalInfo'];
 		
-		$temp1=$row['temp1'];
-		$temp2=$row['temp2'];
-		$humidity=$row['humidity'];
-		$pressure=$row['pressure']/100;
-		$voltageMet=$row['voltageMet'];
-		
-		
+		$temp1=$states['temp1'];
+		$temp2=$states['temp2'];
+		$humidity=$states['humidity'];
+		$pressure=$states['pressure']/100;
+		$voltageMet=$states['voltageMet'];
+	
 		
 		//document.getElementById("textout").innerHTML = str; 
+	}
+	
+	function CheckDeviceOnline($ip){
+		global $deviceTable;
+
+		foreach ($deviceTable as $entry) {
+			if ($entry['ip'] == $ip)
+				return true;
+		}
+		return false;
 	}
 	
 	?>
@@ -115,6 +133,22 @@
 		ctx.fillText(ShowFloat(<?php echo $humidity;?>,1)+"%",posX*w,posY*h);posY+=offsetH;
 		
 		ctx.textAlign="center"; 
+		posX=31.5;posY=18;
+		if ((<?php echo $alarm;?>& 0x01) != 0){
+			ctx.fillStyle = "red";
+			ctx.fillText("ALARM DVEŘE!!!",posX*w,posY*h);
+		}else if ((<?php echo $alarm;?>& 0x02) != 0){
+			ctx.fillStyle = "red";
+			ctx.fillText("ALARM PLYN DÍLNA!!!",posX*w,posY*h);
+		}else if ((<?php echo $alarm;?>& 0x04) != 0){
+			ctx.fillStyle = "red";
+			ctx.fillText("ALARM PLYN OBÝVÁK!!!",posX*w,posY*h);
+		}else if ((<?php echo $alarm;?>& 0x08) != 0){
+			ctx.fillStyle = "red";
+			ctx.fillText("ALARM POHYB OBÝVÁK!!!",posX*w,posY*h);
+		}
+		
+		ctx.textAlign="center"; 
 		posX=31.5;posY=24;
 		if (<?php echo $locked;?>==0){
 			ctx.fillStyle = "#f08700ff";
@@ -168,6 +202,37 @@
 		ctx.fillText("Cena za včera: "+<?php echo $pyPrice['priceLastDay'];?>+" kč",posX*w,posY*h);posY+=offsetH;
 		ctx.fillText("Plnění ročního zúčtování: "+<?php echo $pyPrice['yearPerc'];?>+" %",posX*w,posY*h);posY+=offsetH;
 		ctx.fillText("Denní přírůstek: "+ShowFloat(<?php echo $pyPrice['dailyIncrease'];?>,1)+" %",posX*w,posY*h);posY+=offsetH;
+		
+		/* -------------------- ONLINE DEVICES ----------------------- */
+		
+		posX = 70;
+		posY = 30.5;
+		
+		if(<?php echo json_encode(CheckDeviceOnline("192.168.0.5"));?>==true)
+			ctx.fillStyle = "#2cb4e8";
+		else
+			ctx.fillStyle = "red";
+		ctx.fillText("Rack UNO",posX*w,posY*h);posY+=offsetH;
+		// --------------------------------------
+		if(<?php echo json_encode(CheckDeviceOnline("192.168.0.10"));?>==true)
+			ctx.fillStyle = "#2cb4e8";
+		else
+			ctx.fillStyle = "red";
+		ctx.fillText("Meteostation",posX*w,posY*h);posY+=offsetH;
+		// --------------------------------------
+		if(<?php echo json_encode(CheckDeviceOnline("192.168.0.11"));?>==true)
+			ctx.fillStyle = "#2cb4e8";
+		else
+			ctx.fillStyle = "red";
+		ctx.fillText("Keyboard",posX*w,posY*h);posY+=offsetH;
+		// --------------------------------------
+		if(<?php echo json_encode(CheckDeviceOnline("192.168.0.14"));?>==true)
+			ctx.fillStyle = "#2cb4e8";
+		else
+			ctx.fillStyle = "red";
+		ctx.fillText("PIR sensor",posX*w,posY*h);posY+=offsetH;
+		// --------------------------------------
+		
 	}
 	
 	</script>
@@ -211,6 +276,11 @@
 		$db = new SQLite3('/home/pi/main.db');
 		$db->exec("UPDATE cmd SET updated = 1, ventilationCmd = ".$_POST["buttonVentilationCmdVal"]);
 		$db->close();
+	}
+	else if(array_key_exists('resetAlarm', $_POST)) { 
+		$db = new SQLite3('/home/pi/main.db');
+		$db->exec("UPDATE cmd SET updated = 1, resetAlarm = 1");
+		$db->close();
 	} 
     ?> 
 	   
@@ -222,6 +292,7 @@
         <input type="submit" name="buttonVentilationCmd" value="buttonVentilationCmd"/> 
 		<input type="text" name="buttonVentilationCmdVal"
                 value="0" /> 
+		<input type="submit" name="resetAlarm" value="resetAlarm"/> 
     </form> 
 
 	<script>
