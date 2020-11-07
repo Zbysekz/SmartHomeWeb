@@ -114,7 +114,7 @@ class Bar(object):
 class Value(object):
     default_color = (255, 255, 255)
 
-    def __init__(self, screen, position, name, units, decimals=1, valueLimit=1000.0, colorLimit=(255, 0, 0),
+    def __init__(self, screen, position, units, decimals=1, valueLimit=1000.0, colorLimit=(255, 0, 0),
                  color=None):
         self.value = 0.0
         self.valueLimit = valueLimit
@@ -126,19 +126,27 @@ class Value(object):
         self.colorLimit_anim = colorLimit
         self.position = position
 
-        self.font = pygame.font.SysFont('mono', 20, bold=True)
+        self.valFont = pygame.font.SysFont('mono', 20, bold=True)
+        self.unitsFont = pygame.font.SysFont('mono', 8, bold=True)
+
         self.screen = screen
-        self.name = name
         self.units = units
         self.animTmp = 0.0
         self.speed = 0.3
+        self.decimals = decimals
 
     def Draw(self):
-        text = "{} {:.1f} {}".format(self.name, self.value, self.units)
-        fw, fh = self.font.size(text)  # fw: font width,  fh: font height
-        surface = self.font.render(text, True, self.color if self.value < self.valueLimit else self.colorLimit_anim)
+        formatStr = "{:."+str(self.decimals)+"f}"
 
-        self.screen.blit(surface, self.position)
+        valueText = formatStr.format(self.value)
+
+        surfaceVal = self.valFont.render(valueText, True, self.color if self.value < self.valueLimit else self.colorLimit_anim)
+        self.screen.blit(surfaceVal, self.position)
+
+        unitsVal = self.unitsFont.render(self.units, True,
+                                      self.color if self.value < self.valueLimit else self.colorLimit_anim)
+        self.screen.blit(unitsVal, (self.position[0] + surfaceVal.get_width(),self.position[1]))
+
 
     def Animate(self):
 

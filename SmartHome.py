@@ -40,14 +40,22 @@ class PygView(object):
         self.objects = {}
 
         Value.default_color = TEXT_COLOR  # sets default for all values
+
+        offset_y = 20
+        x = 40
+        y = 80
         # inside
-        self.objects['temperature1'] = Value(screen = self.screen, position=(100, 100), name='', units='°C')
-        self.objects['humidity'] = Value(screen=self.screen, position=(100, 120), name='', units='%')
+        self.objects['temperature1'] = Value(screen = self.screen, position=(x, y), units='°C')
+        self.objects['humidity'] = Value(screen=self.screen, position=(x, y - offset_y*1), units='%')
+
+        x = 40
+        y = 250
 
         # outside
-        self.objects['temperature2'] = Value(screen=self.screen, position=(200, 100), name='', units='°C')
-        self.objects['pressure'] = Value(screen=self.screen, position=(200, 120), name='', units='kPa')
-        self.objects['stationVoltage'] = Value(screen=self.screen, position=(200, 140), name='', units='V', decimals=2)
+        self.objects['temperature2'] = Value(screen=self.screen, position=(x, y - offset_y*1), units='°C')
+        self.objects['pressure'] = Value(screen=self.screen, position=(x, y - offset_y*2), units='kPa')
+        self.objects['stationVoltage'] = Value(screen=self.screen, position=(x, y - offset_y*3), units='V', decimals=2)
+        self.objects['temperature3'] = Value(screen=self.screen, position=(x, y - offset_y*4), units='°C')
 
         # test
         self.objects['arrow1'] = Arrows(surface=self.surface, direction=Direction.DOWN, count=10,
@@ -89,12 +97,11 @@ class PygView(object):
             milliseconds = self.clock.tick(self.fps)
             self.playtime += milliseconds / 1000.0
 
-            #self.draw_background()
+            self.drawBackground()
             #frame
             pygame.draw.rect(self.screen, (44, 180, 232), (0, 0, self.width-2, self.height-2), 2)
 
-            self.draw_text("T: {:6.3} SECONDS".format(
-                666.23), (0, 50))
+            self.drawText("Stav systému", (200, 50))
 
 
             for name, obj in self.objects.items():
@@ -105,14 +112,15 @@ class PygView(object):
 
         pygame.quit()
 
-    def draw_background(self):
-        img = pygame.image.load("background.png").convert()
+    def drawBackground(self):
+        currentFolder = os.path.dirname(__file__)
+        img = pygame.image.load(currentFolder+"/background.png").convert()
         # transform venus and blit on background in one go
         pygame.transform.scale(img, (self.width, self.height), self.surface)
 
 
 
-    def draw_text(self, text, pos):
+    def drawText(self, text, pos):
         """Center text in window
         """
         fw, fh = self.font.size(text)  # fw: font width,  fh: font height
@@ -120,6 +128,7 @@ class PygView(object):
         # // makes integer division in python3
 
         self.screen.blit(surface, pos)
+
 
     def CheckForSWUpdate(self):
         currentFolder = os.path.dirname(__file__)
