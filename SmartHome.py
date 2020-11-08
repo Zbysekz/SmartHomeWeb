@@ -3,6 +3,8 @@ import sys
 import math
 import os
 from GUIObjects import Arrows, Value, Direction, Bar
+import mysql.connector
+import databaseMySQL
 
 # defines
 TEXT_COLOR = (44, 180, 232)
@@ -41,29 +43,50 @@ class PygView(object):
 
         Value.default_color = TEXT_COLOR  # sets default for all values
 
-        offset_y = 20
-        x = 40
-        y = 80
+        offset_y = 25
+        x = 30
+        y = 37
         # inside
-        self.objects['temperature1'] = Value(screen = self.screen, position=(x, y), units='°C')
-        self.objects['humidity'] = Value(screen=self.screen, position=(x, y - offset_y*1), units='%')
+        self.objects['temperature1'] = Value(screen = self.screen, position=(x, y), units='°C', decimals=1)
+        self.objects['humidity'] = Value(screen=self.screen, position=(x, y + offset_y*1), units='%')
 
-        x = 40
-        y = 250
+        y = 118
 
         # outside
-        self.objects['temperature2'] = Value(screen=self.screen, position=(x, y - offset_y*1), units='°C')
-        self.objects['pressure'] = Value(screen=self.screen, position=(x, y - offset_y*2), units='kPa')
-        self.objects['stationVoltage'] = Value(screen=self.screen, position=(x, y - offset_y*3), units='V', decimals=2)
-        self.objects['temperature3'] = Value(screen=self.screen, position=(x, y - offset_y*4), units='°C')
+        self.objects['temperature2'] = Value(screen=self.screen, position=(x, y + offset_y*1), units='°C', decimals = 1)
+        self.objects['pressure'] = Value(screen=self.screen, position=(x, y + offset_y*2), units='hPa')
+        self.objects['stationVoltage'] = Value(screen=self.screen, position=(x, y + offset_y*3), units='V', decimals=2)
+        self.objects['temperature3'] = Value(screen=self.screen, position=(x, y + offset_y*4), units='°C', decimals = 1)
 
-        # test
-        self.objects['arrow1'] = Arrows(surface=self.surface, direction=Direction.DOWN, count=10,
-                                        position=(50, 130), colorA=(0, 200, 0), colorB=(0, 255, 0))
-        self.objects['bar1'] = Bar(screen=self.screen, color=(0, 200, 50), rect = (200, 50, 20, 120), direction = Direction.UP)
-        self.objects['bar2'] = Bar(screen=self.screen, color=(50, 200, 0), rect = (230, 50, 20, 120), direction = Direction.DOWN)
-        self.objects['bar3'] = Bar(screen=self.screen, color=(100, 200, 50), rect = (360, 100, 120, 50), direction = Direction.LEFT)
-        self.objects['bar4'] = Bar(screen=self.screen, color=(150, 200, 0), rect = (390, 160, 120, 50), direction = Direction.RIGHT)
+        # arrows
+        self.objects['arrowGridHouse'] = Arrows(surface=self.surface, direction=Direction.DOWN, count=10,
+                                        position=(438, 175), colorA=(0, 200, 0), colorB=(0, 255, 0))
+        self.objects['arrowPowerwallHouse'] = Arrows(surface=self.surface, direction=Direction.LEFT, count=10,
+                                        position=(574, 290), colorA=(0, 200, 0), colorB=(0, 255, 0))
+        self.objects['arrowSolarPowerwall'] = Arrows(surface=self.surface, direction=Direction.DOWN, count=10,
+                                        position=(630, 150), colorA=(0, 200, 0), colorB=(0, 255, 0))
+        self.objects['arrowWater'] = Arrows(surface=self.surface, direction=Direction.RIGHT, count=3,
+                                        position=(320, 275), colorA=(0, 0, 200), colorB=(0, 0, 255))
+
+        #bars
+        self.objects['barWater'] = Bar(screen=self.screen, color=(0, 0, 255), rect = (306, 338, 55, 64), direction = Direction.UP)
+        self.objects['barPowerwall'] = Bar(screen=self.screen, color=(50, 200, 0), rect = (615, 242, 51, 98), direction = Direction.UP)
+
+        #values inside bars
+        self.objects['valueWater1'] = Value(screen=self.screen, position=(310, 342), units='%', size = 0.8)
+        self.objects['valueWater2'] = Value(screen=self.screen, position=(310, 348), units='m3', size = 0.5)
+
+        self.objects['valuePowerwall'] = Value(screen=self.screen, position=(625, 242), units='%', size = 0.8)
+
+        #prices
+        x = 400
+        y = 300
+        offset_y = 25
+        self.objects['valuePriceLastDay'] = Value(screen=self.screen, position=(x, y + offset_y * 1), units='Kč', title="Cena za včera:")
+        self.objects['valuePriceYearPerc'] = Value(screen=self.screen, position=(x, y + offset_y * 2), units='%',
+                                                  title="Roční plnění:")
+        self.objects['valueDailyIncrease'] = Value(screen=self.screen, position=(x, y + offset_y * 3), units='%',
+                                                   title="Denní nárůst:")
 
     def run(self):
         """The mainloop
@@ -86,13 +109,19 @@ class PygView(object):
                         if hasattr(obj, 'Animate'):
                             obj.Animate()
                 elif event.type == pygame.USEREVENT + 2:
-                    self.objects['bar1'].value = 100.0 * abs(math.sin(self.playtime/4.0))
-                    self.objects['bar2'].value = 100.0 * abs(math.sin(self.playtime / 4.0))
-                    self.objects['bar3'].value = 100.0 * abs(math.sin(self.playtime / 4.0))
-                    self.objects['bar4'].value = 100.0 * abs(math.sin(self.playtime / 4.0))
+                    self.objects['barWater'].value = 100.0 * abs(math.sin(self.playtime/4.0))
+                    self.objects['barPowerwall'].value = 100.0 * abs(math.sin(self.playtime / 4.0))
                 elif event.type == pygame.USEREVENT + 3:
                     if self.CheckForSWUpdate():
                         running = False
+                    currValues = databaseMySQL.getCurrentValues()
+
+                    self.objects['temperature1'].value = currValues['temperature_keyboard']
+                    self.objects['humidity'].value = currValues['humidity_keyboard']
+                    self.objects['temperature2'].value = currValues['temperature_meteostation 1']
+                    self.objects['pressure'].value = currValues['pressure_meteostation 1']/10 # kPa to hPa
+                    self.objects['stationVoltage'].value = currValues['voltage_meteostation 1']
+
 
             milliseconds = self.clock.tick(self.fps)
             self.playtime += milliseconds / 1000.0
@@ -101,7 +130,7 @@ class PygView(object):
             #frame
             pygame.draw.rect(self.screen, (44, 180, 232), (0, 0, self.width-2, self.height-2), 2)
 
-            self.drawText("Stav systému", (200, 50))
+            self.drawText("Stav systému", (192, 40))
 
 
             for name, obj in self.objects.items():

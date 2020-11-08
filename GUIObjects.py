@@ -93,7 +93,7 @@ class Bar(object):
             # rect
             pygame.draw.rect(self.screen, self.color, self.rect, 2)
         else:
-            pygame.draw.rect(self.screen, self.color, self.rect, 2)
+            #pygame.draw.rect(self.screen, self.color, self.rect, 2)
 
             barWidth = self.value * self.rect[2] / 100.0
             barHeight = self.value * self.rect[3] / 100.0
@@ -114,9 +114,9 @@ class Bar(object):
 class Value(object):
     default_color = (255, 255, 255)
 
-    def __init__(self, screen, position, units, decimals=1, valueLimit=1000.0, colorLimit=(255, 0, 0),
-                 color=None):
-        self.value = 0.0
+    def __init__(self, screen, position, units, decimals=0, valueLimit=1000.0, colorLimit=(255, 0, 0),
+                 color=None,size=1.0, title=""):
+        self.value = None
         self.valueLimit = valueLimit
         if color is None:
             self.color = Value.default_color
@@ -126,26 +126,41 @@ class Value(object):
         self.colorLimit_anim = colorLimit
         self.position = position
 
-        self.valFont = pygame.font.SysFont('mono', 20, bold=True)
-        self.unitsFont = pygame.font.SysFont('mono', 8, bold=True)
+        self.valFont = pygame.font.SysFont('mono', int(28*size), bold=True)
+        self.unitsFont = pygame.font.SysFont('mono', int(10*size), bold=True)
 
         self.screen = screen
         self.units = units
         self.animTmp = 0.0
         self.speed = 0.3
         self.decimals = decimals
+        self.title=title
 
     def Draw(self):
-        formatStr = "{:."+str(self.decimals)+"f}"
+        if self.value is not None:
+            formatStr = "{:."+str(self.decimals)+"f}"
+            valueText = formatStr.format(self.value)
+        else:
+            if self.decimals>1:
+                valueText = "-."+'-'*self.decimals
+            elif self.decimals>0:
+                valueText = "--."+'-'*self.decimals
+            else:
+                valueText = "--"
 
-        valueText = formatStr.format(self.value)
 
-        surfaceVal = self.valFont.render(valueText, True, self.color if self.value < self.valueLimit else self.colorLimit_anim)
-        self.screen.blit(surfaceVal, self.position)
+        titleOffset = 0
+        if self.title!="":
+            surfaceTitle = self.valFont.render(self.title, True, self.color)
+            self.screen.blit(surfaceTitle, self.position)
+            titleOffset = surfaceTitle.get_width()
+
+        surfaceVal = self.valFont.render(valueText, True, self.color if self.value is None or self.value < self.valueLimit else self.colorLimit_anim)
+        self.screen.blit(surfaceVal, (self.position[0] + titleOffset,self.position[1]))
 
         unitsVal = self.unitsFont.render(self.units, True,
-                                      self.color if self.value < self.valueLimit else self.colorLimit_anim)
-        self.screen.blit(unitsVal, (self.position[0] + surfaceVal.get_width(),self.position[1]))
+                                      self.color if self.value is None or self.value < self.valueLimit else self.colorLimit_anim)
+        self.screen.blit(unitsVal, (self.position[0] + surfaceVal.get_width() + titleOffset,self.position[1]))
 
 
     def Animate(self):
