@@ -122,6 +122,47 @@ def getValues(kind, sensorName, timeFrom, timeTo, _sum = False):
     
     return values
 
+
+def getPriceData():
+    try:
+        db, cursor = Connect()
+
+        sql = "SELECT name, value FROM prices"
+        cursor.execute(sql)
+
+        data = cursor.fetchall()
+
+        values = {}
+        for d in data:
+            values[d[0]] = d[1]
+
+    except Exception as e:
+        Log("Error while writing to database for getPriceData, exception:")
+        LogException(e)
+        return None
+
+    return values
+
+def getOnlineDevices():
+    try:
+        db, cursor = Connect()
+
+        sql = "SELECT name,online FROM onlineDevices"
+        cursor.execute(sql)
+
+        data = cursor.fetchall()
+
+        values = {}
+        for d in data:
+            values[d[0]] = d[1]
+
+    except Exception as e:
+        Log("Error while writing to database for getOnlineDevices, exception:")
+        LogException(e)
+        return None
+
+    return values
+
 def insertValue(name, sensorName, value, timestamp=None):
     try:
         db, cursor = Connect()

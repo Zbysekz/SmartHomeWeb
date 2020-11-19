@@ -114,7 +114,7 @@ class Bar(object):
 class Value(object):
     default_color = (255, 255, 255)
 
-    def __init__(self, screen, position, units, decimals=0, valueLimit=1000.0, colorLimit=(255, 0, 0),
+    def __init__(self, screen, position, units, decimals=0, valueLimit=999999, colorLimit=(255, 0, 0),
                  color=None,size=1.0, title=""):
         self.value = None
         self.valueLimit = valueLimit
@@ -132,7 +132,7 @@ class Value(object):
         self.screen = screen
         self.units = units
         self.animTmp = 0.0
-        self.speed = 0.3
+        self.speed = 0.2
         self.decimals = decimals
         self.title=title
 
@@ -160,7 +160,7 @@ class Value(object):
 
         unitsVal = self.unitsFont.render(self.units, True,
                                       self.color if self.value is None or self.value < self.valueLimit else self.colorLimit_anim)
-        self.screen.blit(unitsVal, (self.position[0] + surfaceVal.get_width() + titleOffset,self.position[1]))
+        self.screen.blit(unitsVal, (self.position[0] + surfaceVal.get_width() + titleOffset,self.position[1]+surfaceVal.get_height()*0.5))
 
 
     def Animate(self):
