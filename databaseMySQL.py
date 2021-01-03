@@ -6,7 +6,9 @@ import time
 import sys
 import os
 from datetime import datetime
+import pathlib
 
+thisScriptPath = str(pathlib.Path(__file__).parent.absolute())
 
 def getCurrentValues():
     try:
@@ -24,6 +26,28 @@ def getCurrentValues():
 
     except Exception as e:
         Log("Error while writing to database for getCurrentValues:, exception:")
+        LogException(e)
+        return None
+    return result
+
+def getStateValues():
+    try:
+        db, cursor = Connect()
+
+        sql = "SELECT locked, alarm, phoneCommState, phoneSignalInfo FROM state"
+        cursor.execute(sql)
+
+        data = cursor.fetchone()
+
+        result = {}
+
+        result['locked'] = data[0]
+        result['alarm'] = data[1]
+        result['phoneCommState'] = data[2]
+        result['phoneSignalInfo'] = data[3]
+
+    except Exception as e:
+        Log("Error while writing to database for getStateValues:, exception:")
         LogException(e)
         return None
     return result
@@ -258,9 +282,8 @@ def LogException(e):
 def Log(strr):
     txt=str(strr)
     print("LOG:"+txt)
-    from datetime import datetime
     dateStr=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    with open("logs/databaseMySQL.log","a") as file:
+    with open(thisScriptPath+"/logs/databaseMySQL.log","a") as file:
         file.write(dateStr+" >> "+txt+"\n")
         
                 

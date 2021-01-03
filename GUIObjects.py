@@ -20,7 +20,9 @@ class Arrows(object):
         self.direction = direction
         self.position = position
         self.animTmp = 0.0
+        self.active = False
 
+        self.NOT_ACTIVE_COL = (80,80,80)
         self.speed = 0.3
 
     def Draw(self):
@@ -57,10 +59,14 @@ class Arrows(object):
 
     def Animate(self):
         # reverse(self.colBuffer)
+
         prev = (0, 0, 0)
         for i in range(len(self.colBuffer)):
             (self.colBuffer[i], prev) = (prev, self.colBuffer[i])  # swap them
 
+        if not self.active:
+            self.colBuffer[0] = self.NOT_ACTIVE_COL
+            return
         diff = self.colorB[0] - self.colorA[0]
         blend1 = diff * abs(math.sin(self.animTmp)) + self.colorA[0]
         diff = self.colorB[1] - self.colorA[1]
@@ -115,7 +121,7 @@ class Value(object):
     default_color = (255, 255, 255)
 
     def __init__(self, screen, position, units, decimals=0, valueLimit=999999, colorLimit=(255, 0, 0),
-                 color=None,size=1.0, title=""):
+                 color=None,size=1.0, title="", units2=""):
         self.value = None
         self.valueLimit = valueLimit
         if color is None:
@@ -127,19 +133,35 @@ class Value(object):
         self.position = position
 
         self.valFont = pygame.font.SysFont('mono', int(28*size), bold=True)
-        self.unitsFont = pygame.font.SysFont('mono', int(10*size), bold=True)
+        self.unitsFont = pygame.font.SysFont('mono', int(15*size), bold=True)
 
         self.screen = screen
         self.units = units
+        self.units2 = units2
         self.animTmp = 0.0
         self.speed = 0.2
         self.decimals = decimals
         self.title=title
 
     def Draw(self):
+
+        value = self.value
+        decimals = self.decimals
+        units = self.units
+        valueLimit = self.valueLimit
+
+
         if self.value is not None:
-            formatStr = "{:."+str(self.decimals)+"f}"
-            valueText = formatStr.format(self.value)
+
+            # if > 1000, switch to higher order if units2 is not empty
+            if value > 1000 and self.units2 != '':
+                value /= 1000
+                valueLimit /= 1000
+                decimals = 2
+                units = self.units2
+
+            formatStr = "{:."+str(decimals)+"f}"
+            valueText = formatStr.format(value)
         else:
             if self.decimals>1:
                 valueText = "-."+'-'*self.decimals
@@ -155,12 +177,12 @@ class Value(object):
             self.screen.blit(surfaceTitle, self.position)
             titleOffset = surfaceTitle.get_width()
 
-        surfaceVal = self.valFont.render(valueText, True, self.color if self.value is None or self.value < self.valueLimit else self.colorLimit_anim)
+        surfaceVal = self.valFont.render(valueText, True, self.color if value is None or value < valueLimit else self.colorLimit_anim)
         self.screen.blit(surfaceVal, (self.position[0] + titleOffset,self.position[1]))
 
-        unitsVal = self.unitsFont.render(self.units, True,
-                                      self.color if self.value is None or self.value < self.valueLimit else self.colorLimit_anim)
-        self.screen.blit(unitsVal, (self.position[0] + surfaceVal.get_width() + titleOffset,self.position[1]+surfaceVal.get_height()*0.5))
+        unitsVal = self.unitsFont.render(units, True,
+                                      self.color if value is None or value < valueLimit else self.colorLimit_anim)
+        self.screen.blit(unitsVal, (self.position[0] + surfaceVal.get_width() + titleOffset,self.position[1]+surfaceVal.get_height()*0.38))
 
 
     def Animate(self):
